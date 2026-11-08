@@ -1,0 +1,68 @@
+name: build-release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: build-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build niri-tablet binary
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    container:
+      image: archlinux:base-devel
+    env:
+      CARGO_HOME: /root/.cargo
+      CARGO_TARGET_DIR: /root/target
+    steps:
+      - name: Install toolchain and system libs
+        run: |
+          pacman -Syu --noconfirm rust git clang \
+            pipewire libinput systemd-libs libdisplay-info libxkbcommon \
+            mesa cairo pango glib2 pixman seatd
+
+      - name: Checkout niri-tablet
+        uses: actions/checkout@v4
+
+      - name: Parse _tag from PKGBUILD
+        id: tag
+        run: echo "tag=$(sed -n 's/^_tag=\([^[:space:]#]*\).*/\1/p' PKGBUILD)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache cargo deps and build dir
+        uses: actions/cache@v4
+        with:
+          path: |
+            /root/.cargo/git
+            /root/.cargo/registry
+            /root/target
+          key: niri-release-${{ steps.tag.outputs.tag }}-${{ hashFiles('*.patch') }}
+          restore-keys: niri-release-${{ steps.tag.outputs.tag }}-
+
+      - name: Clone niri at tag
+        run: git clone --depth 1 --branch "${{ steps.tag.outputs.tag }}" https://github.com/niri-wm/niri
+
+      - name: Apply patch series
+        run: |
+          cd niri
+          for p in ../*.patch; do
+            echo "==> applying $(basename "$p")"
+            patch -Np1 < "$p"
+          done
+
+      - name: cargo build --release
+        run: |
+          cd niri
+          cargo fetch --locked
+          cargo build --frozen --release
+
+      - name: Upload niri binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: niri-tablet-binary
+          path: /root/target/release/niri
+          retention-days: 7

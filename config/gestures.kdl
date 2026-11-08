@@ -1,0 +1,16 @@
+# Bloque gestures para ~/.config/niri/config.kdl
+# Copia este bloque dentro de tu config.kdl (o añádelo al existente).
+
+gestures {
+    hot-corners {
+        off
+
+        bottom-right
+        bottom-left
+        top-right
+        top-left
+    }
+    touchscreen-swipe {
+        fingers 4
+    }
+}

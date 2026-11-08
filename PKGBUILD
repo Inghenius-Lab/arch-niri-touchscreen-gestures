@@ -1,0 +1,112 @@
+# niri-tablet — niri with the touchscreen gesture patchset.
+#
+# Builds from the upstream niri release + the patch series sitting next to
+# this file (makepkg requires local sources flat in the PKGBUILD dir).
+#
+pkgname=niri-tablet
+pkgver=26.04.20.gef77de00
+pkgrel=3
+pkgdesc='A scrollable-tiling Wayland compositor, with touchscreen gestures'
+url='https://github.com/GGEZUS/niri-tablet'
+arch=('x86_64' 'aarch64')
+license=('GPL-3.0-only')
+install=niri-tablet.install
+depends=('cairo' 'glib2' 'glibc' 'libdisplay-info' 'libgcc' 'libinput' 'libpipewire'
+         'libxkbcommon' 'mesa' 'pango' 'pixman' 'seatd' 'systemd-libs'
+         'xdg-desktop-portal-impl')
+makedepends=('cargo' 'rust' 'clang' 'git')
+provides=('niri')
+conflicts=('niri')
+_tag=v26.04  # upstream release the patchset is rebased onto
+source=(
+    "git+https://github.com/niri-wm/niri#tag=${_tag}"
+    '0001-feat-input-add-touchscreen-3-finger-swipe-gestures.patch'
+    '0002-feat-config-add-touchscreen-swipe-gesture-configurat.patch'
+    '0003-docs-document-touchscreen-swipe-gestures.patch'
+    '0004-feat-input-touchscreen-tap-and-bottom-edge-swipe-ges.patch'
+    '0005-feat-input-discrete-4-finger-vertical-swipe-gestures.patch'
+    '0006-fix-input-count-late-joining-fingers-and-fix-deadloc.patch'
+    '0007-test-config-refresh-the-parse-insta-snapshot-for-the.patch'
+    '0008-feat-ui-show-touch-points-compositor-rendered-touch-.patch'
+    '0009-feat-input-hold-swipe-touchscreen-gestures-move-wind.patch'
+    '0010-fix-input-own-multi-finger-touch-sequences-gestures-.patch'
+    '0011-fix-input-latch-gesture-ownership-through-smithay-s-.patch'
+    '0012-fix-input-clear-touch-gesture-state-when-a-touch-dev.patch'
+    '0013-feat-input-gesture-debug-logging-behind-gestures-deb.patch'
+    '0014-feat-input-single-finger-edge-and-corner-swipe-gestu.patch'
+    '0015-docs-document-touchscreen-edge-and-corner-swipe-gest.patch'
+    '0016-fix-test-edge-swipe-test-helper-rectangle-constructi.patch'
+    '0017-feat-input-horizontal-swipe-column-resize-mode.patch'
+    '0018-docs-document-the-touchscreen-swipe-action-options.patch'
+    '0019-feat-gestures-derive-the-tap-flick-tier-from-fingers.patch'
+    '0020-feat-gestures-swipe-more-left-right-for-extra-finger.patch'
+)
+sha256sums=(
+    'SKIP'
+    'e0a109606b17967f49c4568f9becdc719c98eec2bada0ce4644803fd44f57930'
+    '6c7d0529a6fa0ad4aa366166d3696977c13abe7366b9183b9d6a792e11d1c584'
+    '266282997148b480d3fe6e0f684c0b1737377c9a84283148b766c240913c4337'
+    '3d00a1bb2c341ff331ce39e771bae44aa0c4814e6814fda779ffc9c06c5'
+    'bd36b499606c91f01c5ffd90260311a14d3036d53afbe1c3b6ae33a12fde3e01'
+    'b0bdaddd80ea8b9a907d359f7437027067f8249d5cd93300a0095a40556ef3'
+    '213662c339db16a3b0b96bcb128208d9c65874a8e03e205f67fc7497639cd0889'
+    '81021e3f42794ae25a9a0fb901f77269786935eadbf27dd56f9e1242c90553e2'
+    '2c9f1800c6ee3ea33cab29bfd46000bcf2c4f74187159841005e139718ec891f'
+    'e9ff2b560d19fab5c1186fd045bd59f988e377fbf00205f67fc7497639cd0889'
+    '59fb1b5b1ac7c849f3f49dfa48090bc57105c0572d695b3c78e7ac8fd4d9cd47'
+    '894e67039b1cc379eab94f1d4caefc990a31805fa0643b8dbe9e03abc9275635'
+    'ba952e3768914c519fcfaffe7ab2f4d92debe44bc6ab858212617bee60bd423b'
+    '70d70499b8dc0d38576f8a29c73ce3c9a4f0b4f33225f70'
+    'c128588cb43f2d9a2e5d96778e9abc092341bc30f2d0f76f59c0073e613ccb8c'
+    'df71a7e5c10da1c2191f28e5f6558043529a911656d2824b6c97877f3241d4b3'
+    '676c6f7847612d0b3d304fe9bc81bfe21c914896cc6fad24a5e1af84f4ce5d1a'
+    'ac92687df3e3e8bc4b86451159f40b11b967febbcbc842706a65f1728440d3fc'
+    '31db31426ba08566862a3900f0c62a258cb51a7fc169c6e4e56690d2117f43a'
+    '22d206b430c33fadedd63583e624bc712e2a0d1daa867894e2516e8ae4e3912b'
+)
+options=('!strip')
+
+prepare() {
+    cd niri
+    git reset --hard
+    git clean -fd
+    local src
+    for src in "${source[@]}"; do
+        case "$src" in
+            *.patch) msg2 "Applying $src"; patch -Np1 < "$srcdir/$(basename "$src")" ;;
+        esac
+    done
+}
+
+build() {
+    cd niri
+    unset CFLAGS CXXFLAGS LDFLAGS RUSTFLAGS
+    export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$HOME/.cache/niri-tablet-target}"
+    cargo fetch --locked
+    cargo build --frozen --release
+}
+
+package() {
+    cd niri
+    export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$HOME/.cache/niri-tablet-target}"
+
+    install -Dm755 "$CARGO_TARGET_DIR/release/niri" -t "$pkgdir/usr/bin/"
+    install -Dm755 resources/niri-session -t "$pkgdir/usr/bin/"
+    install -Dm644 resources/niri.service resources/niri-shutdown.target \
+        -t "$pkgdir/usr/lib/systemd/user/"
+    install -Dm644 resources/niri.desktop -t "$pkgdir/usr/share/wayland-sessions/"
+    install -Dm644 resources/niri-portals.conf \
+        -t "$pkgdir/usr/share/xdg-desktop-portal/"
+    install -Dm644 resources/default-config.kdl README.md \
+        -t "$pkgdir/usr/share/doc/$pkgname/"
+
+    mkdir -p "$pkgdir/usr/share/bash-completion/completions" \
+             "$pkgdir/usr/share/zsh/site-functions" \
+             "$pkgdir/usr/share/fish/vendor_completions.d"
+    "$CARGO_TARGET_DIR/release/niri" completions bash \
+        > "$pkgdir/usr/share/bash-completion/completions/niri"
+    "$CARGO_TARGET_DIR/release/niri" completions zsh \
+        > "$pkgdir/usr/share/zsh/site-functions/_niri"
+    "$CARGO_TARGET_DIR/release/niri" completions fish \
+        > "$pkgdir/usr/share/fish/vendor_completions.d/niri.fish"
+}
