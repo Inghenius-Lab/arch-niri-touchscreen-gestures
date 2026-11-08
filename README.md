@@ -1,17 +1,21 @@
 # niri-touchscreen-gestures
 
-Gestos táctiles de pantalla (touchscreen) con **4 dedos** para cambiar de workspace en **niri** (Wayland), sobre Arch Linux.
+Gestos táctiles de pantalla (touchscreen) con **3 dedos** para cambiar de workspace en **niri** (Wayland), sobre Arch Linux.
 
 Incluye: parches aplicados sobre niri 26.04, `PKGBUILD` de Arch, configuración de `config.kdl` y un workflow de GitHub Actions para compilar en remoto.
 
 ---
 
-## ¿Qué hace esto?
+## ¿Por qué 3 dedos?
+
+- **2 dedos** = pellizcar/expandir (zoom en navegador y mapas). No se toca.
+- **3 dedos** = cambiar de workspace. Cómodo y sin conflictos.
+- **4 dedos** = incómodo para navegar entre workspaces; se reserva para otras acciones.
 
 niri mainline **no soporta gestos táctiles en pantalla** (solo en trackpad vía libinput). Este proyecto aplica un set de parches (derivado de [GGEZUS/niri-tablet](https://github.com/GGEZUS/niri-tablet)) sobre niri 26.04 para añadir:
 
-- Swipe de 4 dedos arriba/abajo → cambiar de workspace
-- Swipe de 4 dedos izquierda/derecha → navegar columnas
+- Swipe de 3 dedos arriba/abajo → cambiar de workspace
+- Swipe de 3 dedos izquierda/derecha → navegar columnas
 - Taps y hold-swipe táctiles
 
 ---
@@ -66,8 +70,8 @@ gestures {
 }
 ```
 
-- `fingers 4` → activa gestos de 4 dedos para cambiar de workspace
-- Cambia a `fingers 3` si prefieres 3 dedos
+- `fingers 3` → activa gestos de 3 dedos para cambiar de workspace (recomendado)
+- Cambia a `fingers 4` si prefieres 4 dedos
 - Añade `off` para desactivar
 
 Después de editar, reinicia la sesión de niri (logout/login).
