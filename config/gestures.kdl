@@ -11,6 +11,6 @@ gestures {
         top-left
     }
     touchscreen-swipe {
-        fingers 3
+        fingers 4
     }
 }
